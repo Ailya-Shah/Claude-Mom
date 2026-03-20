@@ -1,11 +1,5 @@
 const STORAGE_KEY = "momTabletTracker.v1";
 const DAYS_PER_BATCH = 180;
-const DAILY_DOSE_TARGET = 3;
-const DOSE_PLAN = [
-  { short: "Full", label: "Morning Full" },
-  { short: "Half", label: "Morning Half" },
-  { short: "Half", label: "Day Half" }
-];
 
 const state = {
   daysLoaded: 0,
@@ -172,14 +166,14 @@ function buildDayCard(date, dateKey) {
   const right = document.createElement("div");
   right.className = "tablet-row";
 
-  for (let i = 0; i < DAILY_DOSE_TARGET; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const label = document.createElement("label");
     label.className = "pill-check";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = Boolean(record.tablets[i]);
-    checkbox.setAttribute("aria-label", `${DOSE_PLAN[i].label} for ${dateKey}`);
+    checkbox.setAttribute("aria-label", `Tablet ${i + 1} for ${dateKey}`);
 
     checkbox.addEventListener("change", async () => {
       updateTablet(dateKey, i, checkbox.checked);
@@ -189,7 +183,7 @@ function buildDayCard(date, dateKey) {
     });
 
     const box = document.createElement("span");
-    box.textContent = DOSE_PLAN[i].short;
+    box.textContent = `Tab ${i + 1}`;
 
     label.appendChild(checkbox);
     label.appendChild(box);
@@ -220,20 +214,15 @@ function updateTodaySummary() {
   const todayKey = toDateKey(new Date());
   const todayRecord = ensureRecord(todayKey);
   const done = todayRecord.tablets.filter(Boolean).length;
-  todayProgress.textContent = `Today: ${done} of ${DAILY_DOSE_TARGET} doses done`;
+  todayProgress.textContent = `Today: ${done} of 3 tablets done`;
 }
 
 function ensureRecord(dateKey) {
   if (!state.data.records[dateKey]) {
     state.data.records[dateKey] = {
-      tablets: Array.from({ length: DAILY_DOSE_TARGET }, () => false),
+      tablets: [false, false, false],
       updatedAt: 0
     };
-  } else if (!Array.isArray(state.data.records[dateKey].tablets)) {
-    state.data.records[dateKey].tablets = Array.from({ length: DAILY_DOSE_TARGET }, () => false);
-  } else if (state.data.records[dateKey].tablets.length < DAILY_DOSE_TARGET) {
-    const missing = DAILY_DOSE_TARGET - state.data.records[dateKey].tablets.length;
-    state.data.records[dateKey].tablets.push(...Array.from({ length: missing }, () => false));
   }
 
   return state.data.records[dateKey];
@@ -261,7 +250,7 @@ function persistLocalData() {
 
 function getCompletionText(tablets) {
   const count = tablets.filter(Boolean).length;
-  return `${count} of ${DAILY_DOSE_TARGET} done`;
+  return `${count} of 3 done`;
 }
 
 function toDateKey(date) {
@@ -405,7 +394,11 @@ function mergeRecords(remoteRecords) {
     const currentTime = Number(current.updatedAt || 0);
 
     if (incomingTime >= currentTime) {
-      current.tablets = Array.from({ length: DAILY_DOSE_TARGET }, (_, index) => Boolean(incoming.tablets?.[index]));
+      current.tablets = [
+        Boolean(incoming.tablets?.[0]),
+        Boolean(incoming.tablets?.[1]),
+        Boolean(incoming.tablets?.[2])
+      ];
       current.updatedAt = incomingTime;
     }
   }
