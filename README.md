@@ -1,11 +1,13 @@
 # Mom Tablet Tracker (GitHub Pages)
 
-A simple mobile-friendly app to track 3 tablets per day.
+A simple mobile-friendly app to track daily medicine dose boxes.
 
 ## What this app does
 
 - Shows dates from today onward.
-- Each date has 3 checkboxes (Tab 1, Tab 2, Tab 3).
+- Each date has 2 checkboxes for the plan:
+	- Full
+	- Half
 - Saves every tick immediately on the phone (local storage).
 - Optional cloud sync using Google Sheets + Google Apps Script, so data can be shared across devices.
 - Works on GitHub Pages.
