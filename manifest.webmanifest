@@ -5,6 +5,6 @@
   "display": "standalone",
   "background_color": "#f7f5ef",
   "theme_color": "#0b5d4b",
-  "description": "Simple daily 3-tablet tracker with calendar-style view.",
+  "description": "Simple daily medicine dose tracker with calendar-style view.",
   "icons": []
 }
