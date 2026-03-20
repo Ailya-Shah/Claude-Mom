@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mom Tablet Tracker</title>
+  <meta name="theme-color" content="#0b5d4b" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-shape bg-shape-1"></div>
+  <div class="bg-shape bg-shape-2"></div>
+
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Daily Medicine</p>
+        <h1>Mom Tablet Tracker</h1>
+        <p class="subline" id="todayProgress">Today: 0 of 3 tablets done</p>
+      </div>
+      <button id="settingsBtn" class="secondary-btn" type="button">Settings</button>
+    </header>
+
+    <section class="status-row">
+      <span id="syncStatus" class="status-pill">Saved locally</span>
+      <button id="syncNowBtn" class="secondary-btn" type="button">Sync now</button>
+    </section>
+
+    <section class="controls">
+      <button id="jumpTodayBtn" type="button">Jump to Today</button>
+      <button id="loadMoreBtn" class="secondary-btn" type="button">Load More Days</button>
+    </section>
+
+    <section id="calendarRoot" class="calendar-root" aria-live="polite"></section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="settings-form" id="settingsForm">
+      <h2>Sync Settings</h2>
+      <p>Add your Google Apps Script Web App URL to sync between phones/devices.</p>
+
+      <label for="endpointInput">Apps Script Endpoint URL</label>
+      <input
+        id="endpointInput"
+        name="endpoint"
+        type="url"
+        placeholder="https://script.google.com/macros/s/.../exec"
+      />
+
+      <div class="hint-box">
+        Leave this empty to use local-only storage on this phone.
+      </div>
+
+      <menu>
+        <button value="cancel" class="secondary-btn" type="button" id="cancelSettingsBtn">Cancel</button>
+        <button value="save" type="submit">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
