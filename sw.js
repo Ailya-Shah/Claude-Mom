@@ -1,5 +1,6 @@
-const CACHE_NAME = "mom-tablet-tracker-v1";
+const CACHE_NAME = "mom-tablet-tracker-v2";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest"];
+const APP_SHELL_PATHS = new Set(["/", "/index.html", "/styles.css", "/app.js", "/manifest.webmanifest"]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
@@ -15,6 +16,16 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+  const isNavigateRequest = event.request.mode === "navigate";
+  const isAppShellFile = isSameOrigin && APP_SHELL_PATHS.has(requestUrl.pathname);
+
+  if (isNavigateRequest || isAppShellFile) {
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
@@ -34,3 +45,13 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => {
+      const cloned = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+      return response;
+    })
+    .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")));
+}
