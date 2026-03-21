@@ -10,7 +10,8 @@ const state = {
   daysLoaded: 0,
   data: {
     settings: {
-      endpoint: ""
+      endpoint: "",
+      timelineStartDate: ""
     },
     records: {}
   }
@@ -32,6 +33,7 @@ init();
 
 function init() {
   loadLocalData();
+  ensureTimelineStartDate();
   endpointInput.value = state.data.settings.endpoint || "";
   renderNextBatch();
   updateTodaySummary();
@@ -97,14 +99,14 @@ function wireEvents() {
 }
 
 function renderNextBatch() {
-  const start = addDays(new Date(), state.daysLoaded);
+  const timelineStart = parseDateKey(state.data.settings.timelineStartDate) || new Date();
   const endOffset = state.daysLoaded + DAYS_PER_BATCH;
   const fragment = document.createDocumentFragment();
   let currentMonthNode = null;
   let currentMonthKey = "";
 
   for (let offset = state.daysLoaded; offset < endOffset; offset += 1) {
-    const date = addDays(new Date(), offset);
+    const date = addDays(timelineStart, offset);
     const dateKey = toDateKey(date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
@@ -251,6 +253,18 @@ function loadLocalData() {
   }
 }
 
+function ensureTimelineStartDate() {
+  const currentKey = state.data.settings.timelineStartDate;
+  if (parseDateKey(currentKey)) {
+    return;
+  }
+
+  const recordKeys = Object.keys(state.data.records).filter((key) => parseDateKey(key));
+  const fallbackKey = recordKeys.length ? recordKeys.sort()[0] : toDateKey(new Date());
+  state.data.settings.timelineStartDate = fallbackKey;
+  persistLocalData();
+}
+
 function persistLocalData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
 }
@@ -265,6 +279,32 @@ function toDateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function parseDateKey(dateKey) {
+  if (typeof dateKey !== "string") {
+    return null;
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
 }
 
 function addDays(date, days) {
