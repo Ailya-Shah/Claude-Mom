@@ -271,25 +271,10 @@ function loadLocalData() {
 }
 
 function ensureTimelineStartDate() {
-  const recordKeys = Object.keys(state.data.records).filter((key) => parseDateKey(key));
-  const earliestRecordKey = recordKeys.length ? recordKeys.sort()[0] : null;
-  
-  const currentKey = state.data.settings.timelineStartDate;
-  
-  if (parseDateKey(currentKey)) {
-    if (earliestRecordKey && earliestRecordKey < currentKey) {
-      state.data.settings.timelineStartDate = earliestRecordKey;
-      persistLocalData();
-    }
-    return;
-  }
-  
-  if (earliestRecordKey) {
-    state.data.settings.timelineStartDate = earliestRecordKey;
-  } else {
+  if (state.data.settings.timelineStartDate !== DEFAULT_TIMELINE_START_KEY) {
     state.data.settings.timelineStartDate = DEFAULT_TIMELINE_START_KEY;
+    persistLocalData();
   }
-  persistLocalData();
 }
 
 function persistLocalData() {
@@ -498,19 +483,9 @@ function mergeRecords(remoteRecords) {
 }
 
 function checkAndUpdateTimelineStart(newDateKey) {
-  const recordKeys = Object.keys(state.data.records).filter((key) => parseDateKey(key));
-  const earliestRecordKey = recordKeys.length ? recordKeys.sort()[0] : null;
-  const currentKey = state.data.settings.timelineStartDate;
-  const currentDate = parseDateKey(currentKey);
-  
-  if (!earliestRecordKey) {
-    return;
-  }
-  
-  if (!currentDate || earliestRecordKey < currentKey) {
-    state.data.settings.timelineStartDate = earliestRecordKey;
+  if (state.data.settings.timelineStartDate !== DEFAULT_TIMELINE_START_KEY) {
+    state.data.settings.timelineStartDate = DEFAULT_TIMELINE_START_KEY;
     persistLocalData();
-
     rerenderCalendar();
   }
 }
@@ -538,11 +513,7 @@ function deleteOldestInventories(limit) {
 }
 
 function recalculateTimelineStart() {
-  const recordKeys = Object.keys(state.data.records)
-    .filter((key) => parseDateKey(key))
-    .sort();
-
-  state.data.settings.timelineStartDate = recordKeys.length ? recordKeys[0] : DEFAULT_TIMELINE_START_KEY;
+  state.data.settings.timelineStartDate = DEFAULT_TIMELINE_START_KEY;
 }
 
 function rerenderCalendar() {
