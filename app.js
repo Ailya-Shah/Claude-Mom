@@ -259,12 +259,21 @@ function ensureTimelineStartDate() {
   const earliestRecordKey = recordKeys.length ? recordKeys.sort()[0] : null;
   
   const currentKey = state.data.settings.timelineStartDate;
-  const fallbackKey = earliestRecordKey || toDateKey(new Date());
   
-  if (!currentKey || !parseDateKey(currentKey) || (earliestRecordKey && earliestRecordKey < currentKey)) {
-    state.data.settings.timelineStartDate = fallbackKey;
-    persistLocalData();
+  if (parseDateKey(currentKey)) {
+    if (earliestRecordKey && earliestRecordKey < currentKey) {
+      state.data.settings.timelineStartDate = earliestRecordKey;
+      persistLocalData();
+    }
+    return;
   }
+  
+  if (earliestRecordKey) {
+    state.data.settings.timelineStartDate = earliestRecordKey;
+  } else {
+    state.data.settings.timelineStartDate = "2026-03-21";
+  }
+  persistLocalData();
 }
 
 function persistLocalData() {
