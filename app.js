@@ -254,15 +254,16 @@ function loadLocalData() {
 }
 
 function ensureTimelineStartDate() {
-  const currentKey = state.data.settings.timelineStartDate;
-  if (parseDateKey(currentKey)) {
-    return;
-  }
-
   const recordKeys = Object.keys(state.data.records).filter((key) => parseDateKey(key));
-  const fallbackKey = recordKeys.length ? recordKeys.sort()[0] : toDateKey(new Date());
-  state.data.settings.timelineStartDate = fallbackKey;
-  persistLocalData();
+  const earliestRecordKey = recordKeys.length ? recordKeys.sort()[0] : null;
+  
+  const currentKey = state.data.settings.timelineStartDate;
+  const fallbackKey = earliestRecordKey || toDateKey(new Date());
+  
+  if (!currentKey || !parseDateKey(currentKey) || (earliestRecordKey && earliestRecordKey < currentKey)) {
+    state.data.settings.timelineStartDate = fallbackKey;
+    persistLocalData();
+  }
 }
 
 function persistLocalData() {
