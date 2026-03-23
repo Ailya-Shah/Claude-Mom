@@ -213,6 +213,7 @@ function updateTablet(dateKey, tabletIndex, value) {
     subtitle.textContent = getCompletionText(record.tablets);
   }
 
+  checkAndUpdateTimelineStart(dateKey);
   updateTodaySummary();
   setSyncStatus(state.data.settings.endpoint ? "Saved. Waiting for sync." : "Saved locally", state.data.settings.endpoint ? "warn" : "");
 }
@@ -445,6 +446,27 @@ function mergeRecords(remoteRecords) {
       current.tablets = normalizeTablets(incoming.tablets);
       current.updatedAt = incomingTime;
     }
+  }
+  checkAndUpdateTimelineStart();
+}
+
+function checkAndUpdateTimelineStart(newDateKey) {
+  const recordKeys = Object.keys(state.data.records).filter((key) => parseDateKey(key));
+  const earliestRecordKey = recordKeys.length ? recordKeys.sort()[0] : null;
+  const currentKey = state.data.settings.timelineStartDate;
+  const currentDate = parseDateKey(currentKey);
+  
+  if (!earliestRecordKey) {
+    return;
+  }
+  
+  if (!currentDate || earliestRecordKey < currentKey) {
+    state.data.settings.timelineStartDate = earliestRecordKey;
+    persistLocalData();
+    
+    calendarRoot.innerHTML = "";
+    state.daysLoaded = 0;
+    renderNextBatch();
   }
 }
 
