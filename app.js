@@ -1,6 +1,7 @@
 const STORAGE_KEY = "momTabletTracker.v1";
 const DAYS_PER_BATCH = 180;
 const DAILY_DOSE_TARGET = 2;
+const DEFAULT_TIMELINE_START_KEY = "2026-03-21";
 const DOSE_PLAN = [
   { short: "Full", label: "Full dose" },
   { short: "Half", label: "Half dose" }
@@ -28,6 +29,7 @@ const cancelSettingsBtn = document.getElementById("cancelSettingsBtn");
 const jumpTodayBtn = document.getElementById("jumpTodayBtn");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
 const syncNowBtn = document.getElementById("syncNowBtn");
+const deleteOldestBtn = document.getElementById("deleteOldestBtn");
 
 init();
 
@@ -84,6 +86,20 @@ function wireEvents() {
 
   loadMoreBtn.addEventListener("click", () => {
     renderNextBatch();
+  });
+
+  deleteOldestBtn.addEventListener("click", async () => {
+    const removedKeys = deleteOldestInventories(10);
+    if (!removedKeys.length) {
+      setSyncStatus("No old inventory found to delete.", "warn");
+      return;
+    }
+
+    setSyncStatus(`Deleted ${removedKeys.length} oldest inventory records.`, "ok");
+
+    if (state.data.settings.endpoint) {
+      await deleteRemoteRecords(removedKeys);
+    }
   });
 
   syncNowBtn.addEventListener("click", async () => {
@@ -271,7 +287,7 @@ function ensureTimelineStartDate() {
   if (earliestRecordKey) {
     state.data.settings.timelineStartDate = earliestRecordKey;
   } else {
-    state.data.settings.timelineStartDate = "2026-03-21";
+    state.data.settings.timelineStartDate = DEFAULT_TIMELINE_START_KEY;
   }
   persistLocalData();
 }
@@ -445,6 +461,28 @@ async function pushAllLocalToRemote() {
   }
 }
 
+async function deleteRemoteRecords(dateKeys) {
+  const endpoint = state.data.settings.endpoint;
+  if (!endpoint || !Array.isArray(dateKeys) || !dateKeys.length) {
+    return;
+  }
+
+  try {
+    await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "deleteMany",
+        dates: dateKeys
+      })
+    });
+  } catch {
+    setSyncStatus("Deleted locally. Cloud delete failed.", "warn");
+  }
+}
+
 function mergeRecords(remoteRecords) {
   for (const [dateKey, incoming] of Object.entries(remoteRecords)) {
     const current = ensureRecord(dateKey);
@@ -472,11 +510,45 @@ function checkAndUpdateTimelineStart(newDateKey) {
   if (!currentDate || earliestRecordKey < currentKey) {
     state.data.settings.timelineStartDate = earliestRecordKey;
     persistLocalData();
-    
-    calendarRoot.innerHTML = "";
-    state.daysLoaded = 0;
-    renderNextBatch();
+
+    rerenderCalendar();
   }
+}
+
+function deleteOldestInventories(limit) {
+  const todayKey = toDateKey(new Date());
+  const sortedOldKeys = Object.keys(state.data.records)
+    .filter((key) => parseDateKey(key) && key < todayKey)
+    .sort();
+
+  const keysToDelete = sortedOldKeys.slice(0, Math.max(0, Number(limit) || 0));
+  if (!keysToDelete.length) {
+    return [];
+  }
+
+  keysToDelete.forEach((key) => {
+    delete state.data.records[key];
+  });
+
+  recalculateTimelineStart();
+  persistLocalData();
+  rerenderCalendar();
+  updateTodaySummary();
+  return keysToDelete;
+}
+
+function recalculateTimelineStart() {
+  const recordKeys = Object.keys(state.data.records)
+    .filter((key) => parseDateKey(key))
+    .sort();
+
+  state.data.settings.timelineStartDate = recordKeys.length ? recordKeys[0] : DEFAULT_TIMELINE_START_KEY;
+}
+
+function rerenderCalendar() {
+  calendarRoot.innerHTML = "";
+  state.daysLoaded = 0;
+  renderNextBatch();
 }
 
 function normalizeTablets(input) {

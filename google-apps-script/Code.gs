@@ -32,6 +32,12 @@ function doPost(e) {
       return jsonResponse({ ok: true, count: records.length });
     }
 
+    if (action === "deleteMany") {
+      const dates = Array.isArray(body.dates) ? body.dates : [];
+      const deleted = deleteManyRecords(dates);
+      return jsonResponse({ ok: true, deleted });
+    }
+
     return jsonResponse({ ok: false, message: "Unknown action" });
   } catch (error) {
     return jsonResponse({ ok: false, message: error.message || "Invalid request" });
@@ -80,6 +86,27 @@ function upsertRecord(date, tablets, updatedAt) {
   }
 
   sheet.appendRow([date, t[0], t[1], t[2], stamp]);
+}
+
+function deleteManyRecords(dates) {
+  const targets = new Set((dates || []).map((date) => String(date || "").trim()).filter(Boolean));
+  if (!targets.size) {
+    return 0;
+  }
+
+  const sheet = getOrCreateSheet();
+  const rows = sheet.getDataRange().getValues();
+  let deleted = 0;
+
+  for (let i = rows.length - 1; i >= 1; i -= 1) {
+    const rowDate = String(rows[i][0] || "").trim();
+    if (targets.has(rowDate)) {
+      sheet.deleteRow(i + 1);
+      deleted += 1;
+    }
+  }
+
+  return deleted;
 }
 
 function getOrCreateSheet() {
